@@ -1,7 +1,7 @@
 [project]
 name = "feishu-mcp"
-version = "0.2.0"
-description = "飞书机器人 MCP 服务：发消息、云文档读写、知识库节点解析"
+version = "1.0.0"
+description = "飞书机器人 MCP 服务：发消息、云文档原地编辑、知识库节点解析"
 requires-python = ">=3.10"
 dependencies = ["mcp>=1.0,<2"]
 
