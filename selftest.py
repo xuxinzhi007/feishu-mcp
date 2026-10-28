@@ -67,6 +67,31 @@ def run(client, ref, report):
         return res
 
     try:
+        # -------------------------------------------------- 非文本块元数据（离线）
+        report.section("非文本块元数据（离线）")
+        synthetic = [
+            {"block_id": "page", "block_type": 1, "children": ["img", "file", "board", "txt"],
+             "page": {"elements": [{"text_run": {"content": "T"}}]}},
+            {"block_id": "txt", "block_type": 2, "parent_id": "page",
+             "text": {"elements": [{"text_run": {"content": "正文"}}]}},
+            {"block_id": "img", "block_type": 27, "parent_id": "page",
+             "image": {"token": "boxcnIMG", "width": 800, "height": 600,
+                       "align": 2, "caption": {"content": "架构图"}}},
+            {"block_id": "file", "block_type": 23, "parent_id": "page",
+             "file": {"token": "boxcnPDF", "name": "设计稿.pdf"}},
+            {"block_id": "board", "block_type": 43, "parent_id": "page",
+             "board": {"token": "wbTOKEN", "align": 1}},
+        ]
+        tree, _ = client._tree(synthetic)
+        nodes = {n["block_id"]: n for n in tree}
+        report.eq("图片块暴露 token/尺寸/caption",
+                  nodes["img"].get("data"),
+                  {"token": "boxcnIMG", "width": 800, "height": 600, "align": 2,
+                   "caption": {"content": "架构图"}})
+        report.eq("附件块暴露文件名", nodes["file"].get("data", {}).get("name"), "设计稿.pdf")
+        report.eq("画板块暴露 whiteboard token", nodes["board"].get("data", {}).get("token"), "wbTOKEN")
+        report.eq("纯文本块不受影响", nodes["txt"]["text"], "正文")
+
         # ---------------------------------------------------------------- 读
         report.section("读取")
         report.check("文档可读，拿到标题", bool(before.get("title")), repr(before.get("title")))

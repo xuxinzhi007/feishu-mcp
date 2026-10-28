@@ -7,7 +7,7 @@
 - 官方 SDK，协议帧格式、握手、错误处理均由 SDK 处理
 - 依赖由 `uv` 管理（自动托管 Python 3.10+）
 - 凭据通过环境变量或本地 `config.json` 提供，`config.json` 不提交
-- 自带实机自测：`selftest.py`（45 条断言，跑完自动清理，原有块做快照比对）
+- 自带实机自测：`selftest.py`（49 条断言，跑完自动清理，原有块做快照比对）
 
 ## 提供的工具
 
@@ -92,6 +92,8 @@ feishu_edit_document(ref, operations)
 | 删除中间某个块 | ✅ `feishu_delete_block`（按父块+下标，不是按 ID 硬删） |
 | 表格创建 / 单元格文字 | ✅ `{"type":"table","rows":[...]}`；单元格文字用嵌套 text 块的 `block_id` 原地改 |
 | 高亮块 / 分栏 | ✅ `{"type":"callout","children":[...]}`，分栏列需自带子块 |
+| 图片 / 附件**元数据**读取 | ✅ `data` 字段带 token、宽高、caption、文件名 |
+| 图片二进制下载 / 上传 | ❌ 缺权限 `docs:document.media:download` / `docs:document.media:upload` |
 | 图片 / 电子表格 / 多维表格创建 | ❌ 未封装（需要素材上传或子表初始化） |
 
 ## 快速开始
@@ -138,14 +140,17 @@ Qoder（`~/.qoder/settings.json`）或 Cursor（`~/.cursor/mcp.json`）里加：
 3. `server.py` 同目录 `config.json`
 4. 当前工作目录 `config.json`
 
-## 权限要求
+## 权限
 
-应用需在飞书开放平台开通以下权限（scope）：
+当前已具备（实测）：`docx:document:readonly`、`docx:document:write_only`、`wiki:node:read`、
+`im:message:send_as_bot`、`im:chat`、`im:resource`、通讯录读取。
 
-- `im:message:send_as_bot` —— 发消息
-- `docx:document:write_only` —— 编辑文档（创建/更新/删除块）
-- `docx:document:readonly` —— 读取文档
-- `wiki:node:read` —— 解析知识库节点
+缺什么、一次性补齐的清单、开通步骤，全在 **[PERMISSIONS.md](PERMISSIONS.md)**。
+按能力逐项自检：
+
+```bash
+uv run --directory . python scope_check.py
+```
 
 要操作的文档需把机器人添加为协作者（写作者）才能写入。
 
@@ -164,8 +169,10 @@ Qoder（`~/.qoder/settings.json`）或 Cursor（`~/.cursor/mcp.json`）里加：
 feishu-mcp/
 ├── server.py           # MCP 服务（官方 SDK + FastMCP）
 ├── feishu_client.py    # 飞书 API 客户端（纯 stdlib，可单独 import 复用）
-├── selftest.py         # 实机自测（45 条断言）
+├── selftest.py         # 实机自测（49 条断言，含离线用例）
 ├── mcp_smoke.py        # MCP 协议层冒烟测试（起 stdio server 调工具）
+├── scope_check.py      # 应用权限自检（逐项探测已具备/缺失）
+├── PERMISSIONS.md      # 权限清单与一次性开通方案
 ├── pyproject.toml      # 依赖声明（mcp>=1.0,<2）
 ├── config.example.json # 凭据模板
 └── config.json         # 真实凭据（gitignore）

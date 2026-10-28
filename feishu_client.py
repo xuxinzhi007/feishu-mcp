@@ -254,6 +254,43 @@ def block_text(block):
     return _elements_text(block)
 
 
+# 非文本块里“有用且体积小”的字段：图片/附件的 token、尺寸、caption 等
+DATA_FIELDS_BY_TYPE = {
+    18: ("token", "view_type"),                                   # 多维表格
+    19: ("background_color", "border_color", "text_color", "emoji_id"),  # 高亮块
+    21: ("diagram_type",),                                        # 流程图/UML 图
+    23: ("token", "name", "view_type"),                           # 附件
+    24: ("column_size",),                                         # 分栏
+    25: ("width_ratio",),                                         # 分栏列
+    26: ("component",),                                           # 内嵌网页
+    27: ("token", "width", "height", "align", "caption"),         # 图片
+    28: ("component_id", "component_type_id"),                    # 小组件
+    29: ("token",),                                               # 思维笔记
+    30: ("token", "row_size", "column_size"),                     # 电子表格
+    31: ("property",),                                            # 表格
+    33: ("view_type",),                                           # 视图
+    35: ("task_id",),                                             # 任务
+    40: ("component_id", "component_type_id", "record"),          # 文档小组件
+    41: ("id", "key"),                                            # Jira
+    42: ("wiki_token",),                                          # Wiki 子目录
+    43: ("token", "align"),                                       # 画板
+}
+
+
+def block_data(block):
+    """非文本块的结构化元数据（图片 token/尺寸、附件名、画板 token 等）。"""
+    block_type = block.get("block_type")
+    fields = DATA_FIELDS_BY_TYPE.get(block_type)
+    if not fields:
+        return None
+    name = BLOCK_TYPES.get(block_type)
+    src = block.get(name) or {}
+    if not isinstance(src, dict):
+        return None
+    data = {k: src[k] for k in fields if src.get(k) is not None}
+    return data or None
+
+
 def _text_run(content, style=None):
     """构造 text_run，支持可选内联样式。"""
     run = {"content": content}
@@ -495,6 +532,9 @@ class FeishuClient:
                 "path": path,
                 "text": block_text(b),
             }
+            data = block_data(b)
+            if data:
+                n["data"] = data
             field = TEXT_FIELD_BY_TYPE.get(b.get("block_type"))
             if include_style and field and b.get("block_type") in EDITABLE_TEXT_TYPES:
                 node_data = b.get(field) or {}

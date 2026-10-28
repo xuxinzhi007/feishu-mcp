@@ -101,9 +101,14 @@ def feishu_read_document(ref: str, include_style: bool = False) -> dict:
         path      位置路径，如 "3" 或 "3.1"
         text      纯文本
         children  子块（列表项缩进、高亮块内容、表格单元格内容都在这里）
+        data      非文本块的结构化元数据：图片给 token/width/height/caption，
+                  附件给 token/name，画板给 token（whiteboard_id），表格给 property 等
 
     同时返回 title_block_id —— 它就是文档标题块，可传给 feishu_update_block 改标题。
     include_style=True 时额外返回 style（对齐/折叠/代码语言/todo 勾选）与 spans（逐片内联样式）。
+
+    图片只返回元数据（token、宽高、caption），不返回图片二进制：下载素材需要
+    docs:document.media:download 权限，当前应用未开通。
 
     Args:
         ref: 文档引用（wiki 链接 / wiki token / docx 文档 ID 都行）。
